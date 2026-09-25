@@ -648,20 +648,18 @@ function AggregatorTable({ phone, ...props }: AggTableProps & { phone: boolean }
   ];
   return (
     <div className="overflow-x-auto">
-      <table className={cx("table-modern", !multi && "table-fixed")}>
-        {/* fixed widths keep the columns of the separate aggregator tables aligned. With several feeders the
-            compact link menus get narrow columns and an empty spacer takes the rest; with one feeder the link
-            chips get a fixed right-aligned column and status/data/mlat share the rest equally */}
+      <table className={"table-modern table-fixed"}>
+        {/* fixed layout keeps the columns of the separate aggregator tables aligned: the link columns are fixed
+            at the right edge (narrow menus with several feeders, chips with one) and status/data/mlat share the rest */}
         <colgroup>
           <col className="w-48" />
           {siteIndices.map((idx) => (
-            <col key={`s-${idx}`} className={multi ? "w-16" : undefined} />
+            <col key={`s-${idx}`} />
           ))}
-          {(["beast", "mlat"] as const).flatMap((metric) => siteIndices.map((idx) => <col key={`${metric}-${idx}`} className={multi ? "w-12" : undefined} />))}
+          {(["beast", "mlat"] as const).flatMap((metric) => siteIndices.map((idx) => <col key={`${metric}-${idx}`} />))}
           {siteIndices.map((idx) => (
             <col key={`l-${idx}`} className={multi ? "w-12" : "w-96"} />
           ))}
-          {multi && <col />}
         </colgroup>
         <thead>
           <tr>
@@ -671,7 +669,6 @@ function AggregatorTable({ phone, ...props }: AggTableProps & { phone: boolean }
                 {gr.label}
               </th>
             ))}
-            {multi && <th />}
           </tr>
           {multi && (
             <tr>
@@ -683,7 +680,6 @@ function AggregatorTable({ phone, ...props }: AggTableProps & { phone: boolean }
                   </th>
                 )),
               )}
-              <th />
             </tr>
           )}
         </thead>
@@ -721,7 +717,6 @@ function AggregatorTable({ phone, ...props }: AggTableProps & { phone: boolean }
                   </td>
                 );
               })}
-              {multi && <td />}
             </tr>
           ))}
         </tbody>
