@@ -358,7 +358,7 @@ function planesChartCaption(short = false) {
   return `Planes seen per day, ending ${today.toLocaleString("en-us", { month: "long", timeZone: "UTC" })} ${today.getUTCDate()} (UTC)`;
 }
 
-const PlanesChart = memo(function PlanesChart({ sites, history, height = 200, caption = true }: { sites: Site[]; history: number[][] | null; height?: number; caption?: boolean }) {
+const PlanesChart = memo(function PlanesChart({ sites, history, height = 260, caption = true }: { sites: Site[]; history: number[][] | null; height?: number; caption?: boolean }) {
   if (!history) return <div className="flex h-60 items-center justify-center text-sm text-neutral-400">Loading statistics…</div>;
   const days = Math.max(0, ...history.map((h) => h.length));
   const labels: number[] = [];
@@ -433,7 +433,7 @@ const chipClass =
 
 function LinkChips({ links }: { links: AggLink[] }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap justify-end gap-1.5">
       {links.map((l) => (
         <a key={l.label} href={l.href} title={l.title} className={chipClass}>
           {l.label}
@@ -648,26 +648,30 @@ function AggregatorTable({ phone, ...props }: AggTableProps & { phone: boolean }
   ];
   return (
     <div className="overflow-x-auto">
-      <table className="table-modern">
-        {/* fixed widths keep the columns of the separate aggregator tables aligned; links take the rest */}
+      <table className={cx("table-modern", !multi && "table-fixed")}>
+        {/* fixed widths keep the columns of the separate aggregator tables aligned. With several feeders the
+            compact link menus get narrow columns and an empty spacer takes the rest; with one feeder the link
+            chips get a fixed right-aligned column and status/data/mlat share the rest equally */}
         <colgroup>
           <col className="w-48" />
           {siteIndices.map((idx) => (
-            <col key={`s-${idx}`} className={multi ? "w-16" : "w-36"} />
+            <col key={`s-${idx}`} className={multi ? "w-16" : undefined} />
           ))}
-          {(["beast", "mlat"] as const).flatMap((metric) => siteIndices.map((idx) => <col key={`${metric}-${idx}`} className={multi ? "w-12" : "w-24"} />))}
+          {(["beast", "mlat"] as const).flatMap((metric) => siteIndices.map((idx) => <col key={`${metric}-${idx}`} className={multi ? "w-12" : undefined} />))}
           {siteIndices.map((idx) => (
-            <col key={`l-${idx}`} />
+            <col key={`l-${idx}`} className={multi ? "w-12" : "w-96"} />
           ))}
+          {multi && <col />}
         </colgroup>
         <thead>
           <tr>
             <th className="sticky left-0 z-[1] bg-white dark:bg-surface-dark">Aggregator</th>
             {groups.map((gr) => (
-              <th key={gr.key} colSpan={siteIndices.length} className={gr.key === "link" && !multi ? "" : "text-center"}>
+              <th key={gr.key} colSpan={siteIndices.length} className={gr.key === "link" && !multi ? "text-right" : "text-center"}>
                 {gr.label}
               </th>
             ))}
+            {multi && <th />}
           </tr>
           {multi && (
             <tr>
@@ -679,6 +683,7 @@ function AggregatorTable({ phone, ...props }: AggTableProps & { phone: boolean }
                   </th>
                 )),
               )}
+              <th />
             </tr>
           )}
         </thead>
@@ -716,6 +721,7 @@ function AggregatorTable({ phone, ...props }: AggTableProps & { phone: boolean }
                   </td>
                 );
               })}
+              {multi && <td />}
             </tr>
           ))}
         </tbody>
@@ -1158,7 +1164,7 @@ export function Home({ data }: { data: HomeData }) {
                   </table>
                 </div>
                 <div className="max-xl:order-first">
-                  <PlanesChart sites={data.sites} history={planeHistory} height={isPhone ? 160 : 220} caption={isPhone} />
+                  <PlanesChart sites={data.sites} history={planeHistory} height={isPhone ? 200 : 280} caption={isPhone} />
                 </div>
               </div>
             )}
