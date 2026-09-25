@@ -36,7 +36,7 @@ export function linePath(pts: readonly (readonly [number, number])[]) {
   return pts.map(([x, y], i) => `${i ? "L" : "M"}${+x.toFixed(2)},${+y.toFixed(2)}`).join("");
 }
 
-const PAD = { top: 14, right: 14, bottom: 26, left: 44 };
+const PAD = { top: 14, right: 16, bottom: 28, left: 50 };
 
 // Lightweight responsive SVG line chart (replaces Chart.js from the old UI).
 // Legend click shows only that series (click it again to show all); shift-click hides / shows
@@ -114,12 +114,14 @@ export function LineChart({ labels, series, height = 240 }: { labels: (string | 
         </defs>
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={PAD.left} x2={width - PAD.right} y1={y(t)} y2={y(t)} className={t === lo ? "stroke-neutral-200 dark:stroke-neutral-700" : "stroke-neutral-100 dark:stroke-neutral-800"} />
-            <text x={PAD.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="fill-neutral-400 text-[11px] tabular-nums dark:fill-neutral-500">
+            <line x1={PAD.left} x2={width - PAD.right} y1={y(t)} y2={y(t)} className={t === lo ? "stroke-neutral-300 dark:stroke-neutral-600" : "stroke-neutral-200 dark:stroke-neutral-700/70"} />
+            <text x={PAD.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="fill-neutral-500 text-xs tabular-nums dark:fill-neutral-400">
               {t.toLocaleString(undefined, { maximumFractionDigits: step < 1 ? 2 : step < 10 && step % 1 ? 1 : 0 })}
             </text>
           </g>
         ))}
+        {markers &&
+          labels.map((_, i) => <line key={i} x1={x(i)} x2={x(i)} y1={PAD.top} y2={PAD.top + innerH} className="stroke-neutral-100 dark:stroke-neutral-800" />)}
         {labels.map((l, i) =>
           n <= 16 || i % Math.ceil(n / 14) === 0 ? (
             <text
@@ -127,7 +129,7 @@ export function LineChart({ labels, series, height = 240 }: { labels: (string | 
               x={x(i)}
               y={height - 6}
               textAnchor="middle"
-              className={cx("text-[11px] tabular-nums transition-colors", hover === i ? "fill-neutral-900 font-medium dark:fill-white" : "fill-neutral-400 dark:fill-neutral-500")}
+              className={cx("text-xs tabular-nums transition-colors", hover === i ? "fill-neutral-900 font-medium dark:fill-white" : "fill-neutral-500 dark:fill-neutral-400")}
             >
               {l}
             </text>
@@ -146,7 +148,7 @@ export function LineChart({ labels, series, height = 240 }: { labels: (string | 
             pathLength={1}
             fill="none"
             style={{ stroke: s.color, opacity: dim === null || dim === s.i ? 1 : 0.15 }}
-            strokeWidth={dim === s.i ? 2.5 : 2}
+            strokeWidth={dim === s.i ? 3 : 2.5}
             strokeLinejoin="round"
             strokeLinecap="round"
             className="transition-opacity duration-200 motion-safe:animate-draw"
@@ -155,7 +157,7 @@ export function LineChart({ labels, series, height = 240 }: { labels: (string | 
         {markers &&
           paths.map((s) => (
             <g key={s.i} style={{ fill: s.color, opacity: dim === null || dim === s.i ? 1 : 0.15 }} className="transition-opacity duration-200 motion-safe:animate-fade-in">
-              {s.data.map((v, i) => (v != null && Number.isFinite(v) ? <circle key={i} cx={x(i)} cy={y(v)} r={paths.length > 3 ? 1.75 : 2.5} /> : null))}
+              {s.data.map((v, i) => (v != null && Number.isFinite(v) ? <circle key={i} cx={x(i)} cy={y(v)} r={paths.length > 3 ? 2.5 : 3.5} strokeWidth={1.5} className="stroke-white dark:stroke-neutral-900" /> : null))}
             </g>
           ))}
         {hover !== null &&
