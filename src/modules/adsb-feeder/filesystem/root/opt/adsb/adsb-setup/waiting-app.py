@@ -15,11 +15,11 @@ theme = "auto"
 verbose: int = 0
 
 
-# we need to fake having env_value_by_tag so that the waiting.html can be
-# used both by this and the main app
+# spa.html (base of waiting.html) falls back to `theme` when the main app's env_* helpers are
+# not defined - don't fake any of them here, the template would then call the others as well
 @app.context_processor
 def utility_processor():
-    return {"env_value_by_tag": lambda _: theme}
+    return {"theme": theme}
 
 
 def print_err(*args, **kwargs):

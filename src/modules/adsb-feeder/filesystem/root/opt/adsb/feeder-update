@@ -108,7 +108,7 @@ else
     if ! cd /opt/adsb-feeder-update/adsb-feeder-image || ! git fetch --force --tags --prune --prune-tags ; then
         cd /opt/adsb-feeder-update || exit_with_message "can't cd /opt/adsb-feeder-update"
         rm -rf /opt/adsb-feeder-update/adsb-feeder-image
-        git clone https://github.com/dirkhh/adsb-feeder-image || exit_with_message "git clone failed, giving up"
+        git clone https://github.com/Paul-Biedermann/adsb-feeder-image || exit_with_message "git clone failed, giving up"
         cd adsb-feeder-image || exit_with_message "can't cd /opt/adsb-feeder-update/adsb-feeder-image"
     fi
 

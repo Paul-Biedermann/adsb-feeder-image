@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+{#
+  Server-rendered base for pages that must keep working without the React bundle:
+  login screens, the WiFi hotspot captive portal and the recovery app. They only use the
+  Tailwind stylesheet from static/spa (classes are picked up via @source in webui/src/index.css)
+  plus a little inline JavaScript where needed.
+#}
+{% if env_value_by_tag is defined %}
+{% set _theme = env_value_by_tag("css_theme") %}
+{% set _nonadsb = env_value_by_tag("aggregator_choice") == "nonadsb" %}
+{% else %}
+{% set _theme = theme if theme is defined else "auto" %}
+{% set _nonadsb = false %}
+{% endif %}
+{% if _theme not in ["light", "dark"] %}{% set _theme = "auto" %}{% endif %}
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="shortcut icon" href="/static/favicon{% if _nonadsb %}-sdr{% endif %}.ico" />
+  <script>
+    (function () {
+      var t = "{{ _theme }}";
+      if (t === "dark" || (t !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='spa/adsbim-ui.css') }}" />
+</head>
+
+<body>
+  <div class="relative flex min-h-screen flex-col overflow-hidden">
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--color-neutral-200),transparent_55%)] dark:bg-[radial-gradient(ellipse_at_top,var(--color-neutral-900),transparent_55%)]"></div>
+    {# literal file names so cachebust.sh can rewrite them #}
+    <img src="{% if _nonadsb %}{{ url_for('static', filename='images/sdrim-background-transparent-4k.png') }}{% else %}
+              {{- url_for('static', filename='images/adsbim-background-transparent-4k.png') }}{% endif %}" alt=""
+         class="pointer-events-none absolute inset-0 m-auto w-[min(1100px,140vw)] max-w-none opacity-[0.06] dark:opacity-[0.05]" />
+    <header class="relative mx-auto flex w-full max-w-5xl items-center gap-3 px-6 py-6">
+      <img src="{% if _nonadsb %}{{ url_for('static', filename='images/sdrim-logo-64.png') }}{% else %}
+                {{- url_for('static', filename='images/adsbim-logo-64.png') }}{% endif %}" alt="" class="size-9 rounded-lg" />
+      <span class="text-[15px] font-bold tracking-tight text-neutral-900 dark:text-white">{% if _nonadsb %}SDR{% else %}ADS-B{% endif %} Feeder Image</span>
+    </header>
+    <main class="relative mx-auto w-full max-w-5xl flex-1 px-4 pb-12 sm:px-6">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="relative px-6 pb-8 text-center text-xs text-neutral-500 dark:text-neutral-400">
+      {% block footer %}{% endblock %}
+    </footer>
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+/* server-rendered templates (login, hotspot, recovery) use Tailwind classes directly */
+@source "../../src/modules/adsb-feeder/filesystem/root/opt/adsb/adsb-setup/templates";
+
+/* dark mode is driven by the feeder's css_theme setting (light / dark / auto), see lib/theme.ts */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* neutral surfaces: canvas, raised cards, subtle fills (light / dark) */
+  --color-canvas: #fafafa;
+  --color-canvas-dark: #1c1c1f;
+  --color-surface-dark: #26262a;
+
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-pop-in: pop-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  /* busy overlay: plane crosses the sky, clouds drift the other way (duration / delay set per cloud) */
+  --animate-fly: fly 4s ease-in-out infinite;
+  --animate-drift: drift 10s linear infinite;
+  --animate-progress: progress 1.6s ease-in-out infinite;
+  --animate-pulse-soft: pulse-soft 2s ease-in-out infinite;
+  /* chart lines trace in from the left (the path needs pathLength="1") */
+  --animate-draw: draw 900ms cubic-bezier(0.4, 0, 0.2, 1) both;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes draw {
+    from { stroke-dasharray: 1; stroke-dashoffset: 1; }
+    to { stroke-dasharray: 1; stroke-dashoffset: 0; }
+  }
+  @keyframes fly {
+    0% { left: -45%; transform: translateY(10px) rotate(-6deg); }
+    45% { transform: translateY(-8px) rotate(-3deg); }
+    85%, 100% { left: 110%; transform: translateY(-2px) rotate(0deg); }
+  }
+  @keyframes drift {
+    from { left: 100%; transform: none; }
+    to { left: 0; transform: translateX(-100%); }
+  }
+  @keyframes progress {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(300%); }
+  }
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 0.65; }
+    50% { opacity: 1; }
+  }
+}
+
+:root {
+  --chart-1: #171717;
+}
+.dark {
+  --chart-1: #e5e5e5;
+  /* dark grey rather than near-black: lift the dark end of the neutral scale so borders,
+     inputs and fills keep their contrast against the lighter canvas / surface */
+  --color-neutral-950: #18181b;
+  --color-neutral-900: #202024;
+  --color-neutral-800: #36363b;
+  --color-neutral-700: #47474d;
+}
+
+@layer base {
+  html {
+    @apply bg-canvas text-neutral-800 antialiased dark:bg-canvas-dark dark:text-neutral-300;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply min-h-screen font-sans text-[15px] leading-relaxed;
+  }
+  a {
+    @apply text-neutral-900 underline decoration-neutral-300 underline-offset-[3px] transition-colors hover:decoration-neutral-900 dark:text-neutral-100 dark:decoration-neutral-600 dark:hover:decoration-neutral-100;
+  }
+  code, pre, kbd {
+    @apply font-mono;
+  }
+  ::selection {
+    @apply bg-neutral-900/15 dark:bg-white/20;
+  }
+}
+
+@layer components {
+  .card {
+    @apply min-w-0 rounded-xl border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:border-neutral-800 dark:bg-surface-dark dark:shadow-none;
+  }
+  .input {
+    @apply block w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 transition
+      placeholder:text-neutral-400 hover:border-neutral-400 focus:border-neutral-900 focus:ring-3 focus:ring-neutral-900/10 focus:outline-none
+      disabled:cursor-not-allowed disabled:opacity-60
+      dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:hover:border-neutral-600
+      dark:focus:border-neutral-300 dark:focus:ring-white/10;
+  }
+  .input:user-invalid {
+    @apply border-rose-400 focus:border-rose-500 focus:ring-rose-500/15 dark:border-rose-500/70;
+  }
+  textarea.input {
+    @apply font-mono text-[13px] leading-5;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-neutral-800 dark:text-neutral-200;
+  }
+  .hint {
+    @apply mt-1.5 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400;
+  }
+  .code-chip {
+    @apply rounded-md border border-neutral-200 bg-neutral-50 px-1.5 py-0.5 font-mono text-[0.85em] text-neutral-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300;
+  }
+  .table-modern {
+    @apply w-full text-left text-sm;
+  }
+  .table-modern thead th {
+    @apply border-b border-neutral-200 px-3 py-2.5 text-xs font-medium text-neutral-500 dark:border-neutral-800 dark:text-neutral-400;
+  }
+  .table-modern tbody td {
+    @apply border-b border-neutral-100 px-3 py-2.5 align-middle dark:border-neutral-800/70;
+  }
+  .table-modern tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .prose-pre {
+    @apply overflow-x-auto rounded-lg border border-neutral-200 bg-neutral-50 p-4 font-mono text-xs leading-5 text-neutral-800 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300;
+  }
+}

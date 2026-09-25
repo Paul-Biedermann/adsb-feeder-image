@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+{#
+  Shell for the React web UI (source in /webui, built into static/spa/).
+  Page templates extend this file and provide:
+    {% block title %}   page title
+    {% block page %}    name of the React page to render
+    {% block data %}    JSON object with the page's context (built with the same helpers the
+                        old templates used, so the Flask backend is unchanged)
+  Some helper apps (waiting-app, hotspot-app, recovery-app) render templates without the
+  env_* helper functions, so everything here must work when they are not defined.
+#}
+{% set _has_env = env_value_by_tag is defined and list_value_by_tag is defined and is_enabled is defined %}
+{% if _has_env %}
+{% set _theme = env_value_by_tag("css_theme") %}
+{% set _site = list_value_by_tag("site_name", 0) %}
+{% set _nonadsb = env_value_by_tag("aggregator_choice") == "nonadsb" %}
+{% else %}
+{% set _theme = theme if theme is defined else "auto" %}
+{% set _site = "" %}
+{% set _nonadsb = false %}
+{% endif %}
+{% if _theme not in ["light", "dark"] %}{% set _theme = "auto" %}{% endif %}
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{% block full_title %}{% if _site and not widget_mode|default(false) %}{{ _site }}: {% endif %}{% block title %}{% endblock %}{% endblock %}</title>
+  <link rel="shortcut icon" href="/static/favicon{% if _nonadsb %}-sdr{% endif %}.ico" />
+  <script>
+    // apply the theme before first paint to avoid a flash of the wrong color scheme
+    (function () {
+      var t = "{{ _theme }}";
+      if (t === "dark" || (t !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='spa/adsbim-ui.css') }}" />
+  <script type="module" src="{{ url_for('static', filename='spa/adsbim-ui.js') }}"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <noscript>
+    <p style="padding: 2rem; font-family: sans-serif">This web interface requires JavaScript.</p>
+  </noscript>
+  {# asset urls are listed here (not in the JS bundle) so cachebust.sh can rewrite them #}
+  {% set _assets = {
+    "logoAdsb": url_for('static', filename='images/adsbim-logo-64.png'),
+    "logoSdr": url_for('static', filename='images/sdrim-logo-64.png'),
+    "kofiSmall": url_for('static', filename='images/kofi_button_stroke_small.png'),
+  } %}
+  {% if _has_env %}
+  {% set _global = {
+    "hasEnv": true,
+    "widgetMode": widget_mode|default(false),
+    "theme": _theme,
+    "aggregatorChoice": env_value_by_tag("aggregator_choice"),
+    "baseConfig": is_enabled("base_config"),
+    "stage2": is_enabled("stage2"),
+    "numMicroSites": env_value_by_tag("num_micro_sites"),
+    "siteNames": env_value_by_tag("site_name"),
+    "tar1090QueryParams": env_value_by_tag("tar1090_query_params"),
+    "acarshub": is_enabled("acarshub"),
+    "shipfeeder": is_enabled("shipfeeder"),
+    "runShipfeeder": is_enabled("run_shipfeeder"),
+    "runSonde": is_enabled("run_sonde"),
+    "runHfdlobserver": is_enabled("run_hfdlobserver"),
+    "runDumphfdl": is_enabled("run_dumphfdl"),
+    "acars2pos": is_enabled("acars2pos"),
+    "skystats": is_enabled("skystats"),
+    "temperatureBlock": is_enabled("temperature_block"),
+    "freedomUnits": is_enabled("freedom_units"),
+    "tempSensor": env_value_by_tag("temp_sensor"),
+    "baseVersion": env_value_by_tag("base_version"),
+    "boardName": env_value_by_tag("board_name"),
+    "imageName": env_value_by_tag("image_name"),
+    "fqdn": env_value_by_tag("fqdn"),
+    "webport": env_value_by_tag("webport"),
+    "webAuthEnabled": not not env_value_by_tag("web_auth_enabled"),
+    "messages": get_flashed_messages(with_categories=true),
+    "assets": _assets,
+  } %}
+  {% else %}
+  {% set _global = {"hasEnv": false, "theme": _theme, "messages": [], "assets": _assets} %}
+  {% endif %}
+  <script id="adsbim-global" type="application/json">{{ _global|tojson }}</script>
+  <script id="adsbim-page" type="application/json">{"page": "{% block page %}notfound{% endblock %}", "data": {% block data %}{}{% endblock %}}</script>
+</body>
+
+</html>
