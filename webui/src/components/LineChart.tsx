@@ -6,27 +6,28 @@ export type Series = { label: string; data: number[]; color: string };
 // categorical palette validated for both light and dark backgrounds
 export const seriesColors = ["var(--chart-1)", "#d97706", "#059669", "#db2777", "#7c3aed", "#0d9488", "#dc2626", "#65a30d", "#0891b2", "#ea580c", "#4f46e5", "#9333ea"];
 
+// nearest 1/2/2.5/5 step rather than the next one up, which could double the step (540 -> 1000)
 function niceStep(v: number) {
   if (v <= 0) return 1;
   const exp = Math.pow(10, Math.floor(Math.log10(v)));
   const f = v / exp;
-  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * exp;
+  return (f < 1.5 ? 1 : f < 2.25 ? 2 : f < 3.5 ? 2.5 : f < 7.5 ? 5 : 10) * exp;
 }
 
-// y-axis fitted to the data range rather than always starting at zero, so a change from
-// 850 to 1000 planes a day reads as a clear rise instead of a flat line. Only falls back to
-// a zero baseline when the data already reaches down near it.
-function niceDomain(values: number[], tickCount = 4) {
-  if (!values.length) return { lo: 0, hi: 10, step: 2.5 };
+// y-axis fitted tightly to the data range rather than starting at zero, so a change from
+// 3600 to 4100 planes a day reads as a clear rise instead of a flat line. Only uses a zero
+// baseline when the data already reaches down close to it. The tick count follows the chart
+// height (one gridline every ~30px) so the steps stay fine enough to read trends off.
+function niceDomain(values: number[], plotHeight: number) {
+  const tickCount = Math.max(4, Math.min(8, Math.floor(plotHeight / 30)));
+  if (!values.length) return { lo: 0, hi: 10, step: 2 };
   let min = Math.min(...values);
   const max = Math.max(...values);
-  if (min === max) min = Math.max(0, max - Math.max(1, max * 0.2));
-  if (min < (max - min) * 0.6) min = 0;
-  // pad a little so the extremes don't sit exactly on the frame
-  const pad = (max - min) * 0.08;
-  const step = niceStep((max + pad - Math.max(0, min - pad)) / tickCount);
-  const lo = min === 0 ? 0 : Math.max(0, Math.floor((min - pad) / step) * step);
-  const hi = Math.max(lo + step, Math.ceil((max + pad) / step) * step);
+  if (min === max) min = Math.max(0, max - Math.max(1, max * 0.1));
+  if (min < (max - min) * 0.15) min = 0;
+  const step = niceStep((max - min) / tickCount);
+  const lo = Math.max(0, Math.floor(min / step) * step);
+  const hi = Math.max(lo + step, Math.ceil(max / step) * step);
   return { lo, hi, step };
 }
 
@@ -61,14 +62,14 @@ export function LineChart({ labels, series, height = 240 }: { labels: (string | 
   const innerH = height - PAD.top - PAD.bottom;
   const n = labels.length;
   // the geometry only changes with the data, size or hidden series - not on hover
-  const { lo, ticks, x, y, paths } = useMemo(() => {
+  const { lo, step, ticks, x, y, paths } = useMemo(() => {
     const visible = series.map((s, i) => ({ ...s, i })).filter((s) => !hidden.has(s.i));
-    const { lo, hi, step } = niceDomain(visible.flatMap((s) => s.data.filter((v) => Number.isFinite(v))));
+    const { lo, hi, step } = niceDomain(visible.flatMap((s) => s.data.filter((v) => Number.isFinite(v))), innerH);
     const ticks: number[] = [];
-    for (let t = lo; t <= hi + step / 2; t += step) ticks.push(t);
+    for (let k = 0; lo + k * step <= hi + step / 2; k++) ticks.push(lo + k * step);
     const x = (i: number) => PAD.left + (n <= 1 ? innerW / 2 : (i * innerW) / (n - 1));
     const y = (v: number) => PAD.top + innerH - ((v - lo) / (hi - lo)) * innerH;
-    return { lo, ticks, x, y, paths: visible.map((s) => ({ ...s, d: linePath(s.data.map((v, i) => [x(i), y(v || 0)] as const)) })) };
+    return { lo, step, ticks, x, y, paths: visible.map((s) => ({ ...s, d: linePath(s.data.map((v, i) => [x(i), y(v || 0)] as const)) })) };
   }, [series, hidden, n, innerW, innerH]);
   // a dot on every day while there's room for them
   const markers = n > 1 && n <= 45 && innerW / n >= 8;
@@ -115,7 +116,7 @@ export function LineChart({ labels, series, height = 240 }: { labels: (string | 
           <g key={t}>
             <line x1={PAD.left} x2={width - PAD.right} y1={y(t)} y2={y(t)} className={t === lo ? "stroke-neutral-200 dark:stroke-neutral-700" : "stroke-neutral-100 dark:stroke-neutral-800"} />
             <text x={PAD.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="fill-neutral-400 text-[11px] tabular-nums dark:fill-neutral-500">
-              {Math.round(t).toLocaleString()}
+              {t.toLocaleString(undefined, { maximumFractionDigits: step < 1 ? 2 : step < 10 && step % 1 ? 1 : 0 })}
             </text>
           </g>
         ))}
