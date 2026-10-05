@@ -983,8 +983,8 @@ export function Home({ data }: { data: HomeData }) {
                 </div>
                 <Legend />
                 <p className="mt-3 text-xs">
-                  Click an aggregator's name to open its map. Degraded MLAT for many of the aggregators tends to be a server-side issue. Only report issues if you are feeding adsb.lol /
-                  adsb.fi / airplanes.live and all aggregators show degraded MLAT.
+                  Click an aggregator's name to open its map. Degraded MLAT for many of the aggregators tends to be a server-side issue. Only report issues if you are feeding adsb.fi or
+                  airplanes.live and those two (and all other aggregators) show degraded MLAT.
                 </p>
               </Collapsible>
             </div>

@@ -47,6 +47,10 @@ NETCONFIGS = {
         NetConfig("adsbfi", "adsb.fi", "https://adsb.fi", "https://adsb.fi/privacy", 5),
         NetConfig("alive", "airplanes.live", "https://airplanes.live", "https://airplanes.live/privacy", 6),
         NetConfig("hpradar", "HPRadar", "https://skylink.hpradar.com/", "", 7),
+        # identifiers may contain "." - the UI must not use them as CSS selectors
+        NetConfig("map.flights", "map.flights", "https://map.flights", "https://map.flights/privacy", 8),
+        NetConfig("planetrack", "PlaneTrack", "https://planetrack.ai/", "https://planetrack.ai/privacy.html", 9),
+        NetConfig("skydex", "Skydex", "https://feed.skydex.online/", "https://feed.skydex.online/privacy.html", 10),
     ]
 }
 
@@ -181,7 +185,7 @@ def base_env():
         "alive": [s == "stage2"] * n,
     }
     for ident in NETCONFIGS:
-        env.setdefault(ident, [ident in ["adsblol", "adsbfi", "adsbx", "tat"]] * n)
+        env.setdefault(ident, [ident in ["adsblol", "adsbfi", "adsbx", "tat", "map.flights"]] * n)
         env[f"{ident}--uuid"] = [f"8b0f9a1c-4f2e-4a7b-9c3d-{ident[:4].ljust(12, '0')}"] * n
     return env
 
@@ -224,6 +228,7 @@ def indices():
 def agg_structure():
     rows = [["adsblol", "adsb.lol", "https://adsb.lol", ["https://my.adsb.lol"] * 4, 0], ["adsbfi", "adsb.fi", "https://globe.adsb.fi", ["https://adsb.fi/?feed=x"] * 4, 0]]
     rows += [["adsbx", "ADSBExchange", "https://globe.adsbexchange.com", [""] * 4, 0], ["tat", "TheAirTraffic", "https://globe.theairtraffic.com", [""] * 4, 0]]
+    rows += [["map.flights", "map.flights", "https://map.flights", ["https://map.flights/myfeed"] * 4, 0]]
     rows += [["flightradar", "flightradar24", "https://www.flightradar24.com/", ["/fr24/", "/fr24_1/", "/fr24_2/", "/fr24_3/"], 1]]
     rows += [["flightaware", "FlightAware", "https://www.flightaware.com/live/map", ["/fa-status/", "/fa-status_1/", "/fa-status_2/", "/fa-status_3/"], 1]]
     if state["scenario"] == "stage2":
