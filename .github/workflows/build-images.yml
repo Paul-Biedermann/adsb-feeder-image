@@ -8,12 +8,32 @@ on:
     - "build-*"
     tags:
     - "v*"
+  # fork: the upstream sync starts builds for the tags it creates this way (run it on the tag:
+  # gh workflow run build-images.yml --ref v1.2.3), as tags pushed with GITHUB_TOKEN trigger nothing
+  workflow_dispatch:
+
+# fork: GITHUB_TOKEN is read-only by default - moving 'latest' and creating releases need write access
+permissions:
+  contents: write
 
 jobs:
   # first, prepare the sources by moving the 'latest' tag to the current SHA
   prepare:
     runs-on: ubuntu-24.04
     steps:
+    # fork: without these the images would be built with empty passwords / no ssh key
+    - name: Check that the image secrets are set
+      env:
+        USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+        ROOT_PASSWORD: ${{ secrets.ROOT_PASSWORD }}
+        SSH_KEY: ${{ secrets.SSH_KEY }}
+      run: |
+        missing=""
+        for s in USER_PASSWORD ROOT_PASSWORD SSH_KEY; do [ -n "${!s}" ] || missing="$missing $s"; done
+        if [ -n "$missing" ]; then
+          echo "::error::repository secrets missing:$missing (Settings - Secrets and variables - Actions), see FORK.md"
+          exit 1
+        fi
     # check the sources out in the 'expected place' for the following step that tags them
     - name: Checkout Project Repository
       uses: actions/checkout@v4
@@ -114,6 +134,9 @@ jobs:
       IMAGE_URL: ${{ matrix.url }}
       MAGIC_PATH: ${{ matrix.magic_path }}
       DIETPI_MACHINE: ${{ matrix.dietpi_machine }}
+      # fork: action-gh-release prefers $GITHUB_TOKEN over its token input, so this covers the
+      # release steps below when there is no PAT_GITHUB_TOKEN secret
+      GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN || github.token }}
 
 
     steps:
