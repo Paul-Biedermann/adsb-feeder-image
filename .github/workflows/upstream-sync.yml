@@ -1,0 +1,67 @@
+# fork only: merge dirkhh/adsb-feeder-image into this fork, re-create its release tags here and
+# start the image builds for them. The logic is in .github/fork-sync/sync.py, see FORK.md.
+name: upstream sync
+
+on:
+  schedule:
+  - cron: "7,37 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "only report what would happen, push nothing"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write  # push branches and tags
+  issues: write  # report what needs manual work
+  actions: write  # start build-images.yml for new tags
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'Paul-Biedermann/adsb-feeder-image'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        show-progress: false
+        # a PAT with 'workflow' scope (optional) lets the sync push upstream changes to
+        # .github/workflows and makes its tag pushes start the image builds by themselves
+        token: ${{ secrets.SYNC_TOKEN || github.token }}
+
+    - name: Set up Node (rebuilds static/spa when fork branches are merged into each other)
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Sync
+      env:
+        GH_TOKEN: ${{ github.token }}
+        DRY_RUN: ${{ inputs.dry_run }}
+        HAVE_SYNC_TOKEN: ${{ secrets.SYNC_TOKEN != '' }}
+        HAVE_IMAGE_SECRETS: ${{ secrets.USER_PASSWORD != '' && secrets.ROOT_PASSWORD != '' && secrets.SSH_KEY != '' }}
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        args=(--summary "$GITHUB_STEP_SUMMARY")
+        if [ "$DRY_RUN" != "true" ]; then
+          args+=(--push --issue)
+          if [ "$HAVE_SYNC_TOKEN" != "true" ]; then
+            # GITHUB_TOKEN can't push changes to .github/workflows, and its tag pushes trigger nothing:
+            # start the image builds explicitly (tags pushed with the PAT trigger build-images.yml)
+            args+=(--restricted-token)
+            if [ "$HAVE_IMAGE_SECRETS" = "true" ]; then
+              args+=(--dispatch-builds)
+            else
+              echo "::warning::USER_PASSWORD / ROOT_PASSWORD / SSH_KEY are not set - no image builds (see FORK.md)"
+            fi
+          fi
+        fi
+        python3 .github/fork-sync/sync.py "${args[@]}"
