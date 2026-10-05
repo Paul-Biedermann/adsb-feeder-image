@@ -105,7 +105,10 @@ else
     mkdir -p /opt/adsb-feeder-update
     # make sure the git dir is up to date
     # don't hide the output as that could be useful in the logs
-    if ! cd /opt/adsb-feeder-update/adsb-feeder-image || ! git fetch --force --tags --prune --prune-tags ; then
+    # (set-url: a checkout cloned by an upstream version still points at dirkhh/adsb-feeder-image)
+    if ! cd /opt/adsb-feeder-update/adsb-feeder-image \
+            || ! git remote set-url origin https://github.com/Paul-Biedermann/adsb-feeder-image \
+            || ! git fetch --force --tags --prune --prune-tags ; then
         cd /opt/adsb-feeder-update || exit_with_message "can't cd /opt/adsb-feeder-update"
         rm -rf /opt/adsb-feeder-update/adsb-feeder-image
         git clone https://github.com/Paul-Biedermann/adsb-feeder-image || exit_with_message "git clone failed, giving up"

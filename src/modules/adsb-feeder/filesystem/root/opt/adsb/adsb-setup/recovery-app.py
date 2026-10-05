@@ -88,7 +88,7 @@ def check_authentication():
 logfile = "/run/adsb-feeder-image.log"
 theme = "auto"
 git_repo_path = "/opt/adsb-feeder-update/adsb-feeder-image"
-git_repo_url = "https://github.com/dirkhh/adsb-feeder-image"
+git_repo_url = "https://github.com/Paul-Biedermann/adsb-feeder-image"
 rollback_in_progress = False
 rollback_target_version = None
 recovery_process = None
@@ -108,6 +108,10 @@ def ensure_git_repo():
         except Exception as e:
             print_err(f"Failed to clone git repo: {e}")
             return False
+    else:
+        # a checkout cloned by an upstream version still points at dirkhh/adsb-feeder-image,
+        # list the versions feeder-update will actually find
+        subprocess.run(["git", "remote", "set-url", "origin", git_repo_url], cwd=git_repo_path, capture_output=True, timeout=10)
     return True
 
 
@@ -133,9 +137,9 @@ def get_git_tags_and_branches():
         return [], []
 
     try:
-        # Fetch latest tags
+        # Fetch latest tags (same flags as feeder-update, so only versions it can find are listed)
         subprocess.run(
-            ["git", "fetch", "--tags"],
+            ["git", "fetch", "--force", "--tags", "--prune", "--prune-tags"],
             cwd=git_repo_path,
             capture_output=True,
             timeout=30,
