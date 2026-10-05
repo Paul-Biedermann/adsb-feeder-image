@@ -2594,6 +2594,9 @@ class AdsbIm:
         print_err(f"update_global: check_ip()", level=8)
         ext_ip = self._system.check_ip()
         fqdn_ip = self._d.env_by_tags("fqdn_ip").value
+        if ext_ip is None:
+            print_err(f"update_global: can't update, external IP not known", level=8)
+            return
         if not (
             fqdn == ""
             or not lookup_match
@@ -2605,8 +2608,6 @@ class AdsbIm:
             print_err(f"update_global: no update needed", level=8)
             return
 
-        if ext_ip is not None:
-            self._d.env_by_tags("fqdn_ext_ip").value = ext_ip
         url = f"{self._d.adsbim_api_url}/0/globalname"
         challenge_response = None
         if fqdn != "":
@@ -2644,7 +2645,9 @@ class AdsbIm:
 
         print_err(
             f"Global name update started in background thread fqdn={fqdn}, lookup_match={lookup_match}, "
-            f"fqdn_ip={fqdn_ip}, local={self.local_address}, ext_ip={ext_ip}, force_update={force_update}"
+            f"fqdn_ip={fqdn_ip}, local={self.local_address}, "
+            f"ext_ip={ext_ip}, fqdn_ext_ip={self._d.env_by_tags('fqdn_ext_ip').value}, "
+            f"force_update={force_update}, fqdn_cert_state={self._d.env_by_tags('fqdn_cert_state').value}"
         )
 
         if challenge_response:
@@ -2676,6 +2679,7 @@ class AdsbIm:
         # Update environment values
         self._d.env_by_tags("fqdn").value = fqdn
         self._d.env_by_tags("fqdn_ip").value = self.local_address
+        self._d.env_by_tags("fqdn_ext_ip").value = ext_ip
         self._d.env_by_tags("fqdn_used_site_name").value = data["site_name"]
 
         # Save certificate, private key, and chain to files
@@ -4241,6 +4245,13 @@ class AdsbIm:
                     airport = self.closest_airport_dict(lat, long)
                     if airport and "icao" in airport:
                         self._d.env_by_tags("closest_airport").list_set(0, airport.get("icao", ""))
+            if key == "alt":
+                # altitude is a plain integer denoting meters (ft conversion done in the frontend)
+                try:
+                    value = str(int(re.sub("[a-zA-Z ]", "", value)))
+                except ValueError:
+                    print_err(f"invalid altitude value: {value}")
+                    continue
             if key == "tz":
                 self.set_tz(value)
                 continue
@@ -4841,8 +4852,7 @@ class AdsbIm:
             try:
                 result = (
                     subprocess.run(
-                        "tailscale ip -4 2>/dev/null",
-                        shell=True,
+                        ["tailscale", "ip", "-4"],
                         capture_output=True,
                         timeout=2.0,
                     )
@@ -4860,7 +4870,6 @@ class AdsbIm:
                 result = (
                     subprocess.run(
                         ["zerotier-cli", "get", f"{zt_network}", "ip4"],
-                        shell=True,
                         capture_output=True,
                         timeout=2.0,
                     )
