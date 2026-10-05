@@ -461,7 +461,7 @@ function AdvancedSettings({ data }: { data: AdvancedData }) {
       <SettingsSection id="ships-weather" title="Ships & weather">
         <Decoder id="shipfeeder" title="AIS / Shipfeeder" description="Track ship positions" icon={<Ship />} enabled={en.shipfeeder}>
           {feedField("ais_station_name", "AIS", "AIS station name")}
-          <TextField label="AIS extra options" name="ais_sx_extra_options" defaultValue={v.ais_sx_extra_options} />
+          <TextField label="ais-catcher extra command line options" name="ais_sx_extra_options" defaultValue={v.ais_sx_extra_options} />
           {!v.aisserial && <NoSdr what="AIS" />}
         </Decoder>
         <Decoder id="show_ships_on_map" title="Ships on the live map" description="Show AIS ships on the ADS-B map (requires AIS / Shipfeeder)" icon={<Activity />} enabled={en.show_ships_on_map} enableDisabled={!en.shipfeeder} />
