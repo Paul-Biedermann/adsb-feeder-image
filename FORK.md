@@ -67,6 +67,9 @@ Every 30 minutes (and via *Actions → upstream sync → Run workflow*, optional
 7. Open / update the issue labeled `upstream-sync` for everything it could not do; close it again
    once a run goes through cleanly.
 
+GitHub pauses scheduled workflows after 60 days without activity in the repository; if upstream is
+quiet that long, re-enable *upstream sync* under Actions.
+
 ### Secrets
 
 | secret | needed for |
